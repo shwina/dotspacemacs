@@ -333,6 +333,8 @@ you should place your code here."
     (evil-define-key 'normal term-raw-map (kbd "C-a") 'term-send-home)
     (evil-define-key 'insert term-raw-map (kbd "C-e") 'term-send-end)
     (evil-define-key 'normal term-raw-map (kbd "C-e") 'term-send-end)
+    (evil-define-key 'insert term-raw-map (kbd "C-h") 'term-send-backspace)
+    (evil-define-key 'normal term-raw-map (kbd "C-h") 'term-send-backspace)
     )
    (add-hook 'term-mode-hook (lambda () (clean-aindent-mode -1)))`
 
