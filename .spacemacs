@@ -30,6 +30,8 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
+     csv
+     html
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press <SPC f e R> (Vim style) or
@@ -43,10 +45,9 @@ values."
      git
      markdown
      org
+     osx
      python
-     semantic
      (shell :variables
-            shell-default-shell 'term
             shell-default-height 30
             shell-default-position 'bottom)
     ; spell-checking
@@ -58,11 +59,11 @@ values."
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
-   dotspacemacs-additional-packages '(cuda-mode)
+   dotspacemacs-additional-packages '(cuda-mode firestarter)
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '()
+   dotspacemacs-excluded-packages '(anaconda-mode semantic-mode)
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
    ;; `used-only' installs only explicitly used packages and uninstall any
@@ -137,7 +138,7 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 15
+                               :size 14
                                :weight normal
                                :width normal
                                :powerline-scale 1.1)
@@ -342,8 +343,30 @@ you should place your code here."
     (evil-define-key 'insert term-raw-map (kbd "M-b") 'term-send-backward-word)
     )
   (add-hook 'term-mode-hook (lambda () (clean-aindent-mode -1)))`
+
+ ;; Speeding up Tramp
+  (setq tramp-default-method "ssh")
+  (setq tramp-completion-reread-directory-timeout nil)
   (setq projectile-mode-line "Projectile")
-  (setq tramp-ssh-controlmaster-options "")
+  (setq tramp-verbose 6)
+  (customize-set-variable 'tramp-use-ssh-controlmaster-options nil)
+  (with-eval-after-load 'git-gutter+
+    (defun git-gutter+-remote-default-directory (dir file)
+      (let* ((vec (tramp-dissect-file-name file))
+             (method (tramp-file-name-method vec))
+             (user (tramp-file-name-user vec))
+             (domain (tramp-file-name-domain vec))
+             (host (tramp-file-name-host vec))
+             (port (tramp-file-name-port vec)))
+        (tramp-make-tramp-file-name method user domain host port dir)))
+
+    (defun git-gutter+-remote-file-path (dir file)
+      (let ((file (tramp-file-name-localname (tramp-dissect-file-name file))))
+        (replace-regexp-in-string (concat "\\`" dir) "" file))))
+
+
+  (setq projectile-enable-caching t)
+
   (setq python-shell-interpreter "python")
   (setq python-shell-interpreter-args "-i")
   (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
@@ -351,6 +374,14 @@ you should place your code here."
 
   (use-package cuda-mode
     :defer t)
+
+  (with-eval-after-load 'org
+    (setq org-directory "~//org"))
+
+  (remove-hook 'python-mode-hook 'spacemacs//init-eldoc-python-mode)
+  (remove-hook 'python-mode-hook 'spacemacs//anaconda-eldoc-mode)
+
+  (setq term-char-mode-point-at-process-mark nil)
 )
 
 ;; Do not write anything past this comment. This is where Emacs will
@@ -364,7 +395,87 @@ you should place your code here."
  '(evil-want-Y-yank-to-eol nil)
  '(package-selected-packages
    (quote
-    (powerline spinner org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download hydra htmlize parent-mode projectile gnuplot pkg-info epl flx highlight smartparens iedit anzu evil goto-chg undo-tree cuda-mode bind-map bind-key packed f dash s helm avy helm-core async popup pyenv-mode orgit markdown-toc magit-gitflow hy-mode helm-gitignore helm-company helm-c-yasnippet gruvbox-theme git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ flycheck-pos-tip pos-tip evil-magit magit-popup magit transient git-commit darktooth-theme company-statistics company-c-headers company-anaconda auto-yasnippet anaconda-mode ac-ispell zenburn-theme zen-and-art-theme yapfify xterm-color white-sand-theme unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle shell-pop seti-theme reverse-theme rebecca-theme railscasts-theme pyvenv pytest py-isort purple-haze-theme professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-mode majapahit-theme madhat2r-theme lush-theme live-py-mode light-soap-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme dash-functional heroku-theme hemisu-theme helm-pydoc hc-zenburn-theme gruber-darker-theme grandshell-theme gotham-theme gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter with-editor gh-md gandalf-theme fuzzy flycheck flatui-theme flatland-theme farmhouse-theme exotica-theme lv espresso-theme eshell-z eshell-prompt-extras esh-help dracula-theme django-theme disaster diff-hl autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme yasnippet apropospriate-theme anti-zenburn-theme pythonic ample-zen-theme ample-theme alect-themes afternoon-theme auto-complete ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line))))
+    (firestarter ssh-deploy csv-mode web-mode tagedit slim-mode scss-mode sass-mode reveal-in-osx-finder pug-mode pbcopy osx-trash osx-dictionary launchctl helm-css-scss haml-mode emmet-mode company-web web-completion-data powerline spinner org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download hydra htmlize parent-mode projectile gnuplot pkg-info epl flx highlight smartparens iedit anzu evil goto-chg undo-tree cuda-mode bind-map bind-key packed f dash s helm avy helm-core async popup pyenv-mode orgit markdown-toc magit-gitflow hy-mode helm-gitignore helm-company helm-c-yasnippet gruvbox-theme git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ flycheck-pos-tip pos-tip evil-magit magit-popup magit transient git-commit darktooth-theme company-statistics company-c-headers company-anaconda auto-yasnippet anaconda-mode ac-ispell zenburn-theme zen-and-art-theme yapfify xterm-color white-sand-theme unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle shell-pop seti-theme reverse-theme rebecca-theme railscasts-theme pyvenv pytest py-isort purple-haze-theme professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-mode majapahit-theme madhat2r-theme lush-theme live-py-mode light-soap-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme dash-functional heroku-theme hemisu-theme helm-pydoc hc-zenburn-theme gruber-darker-theme grandshell-theme gotham-theme gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter with-editor gh-md gandalf-theme fuzzy flycheck flatui-theme flatland-theme farmhouse-theme exotica-theme lv espresso-theme eshell-z eshell-prompt-extras esh-help dracula-theme django-theme disaster diff-hl autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme yasnippet apropospriate-theme anti-zenburn-theme pythonic ample-zen-theme ample-theme alect-themes afternoon-theme auto-complete ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line)))
+ '(safe-local-variable-values
+   (quote
+    ((firestarter . "rsync -avz -e ssh /Users/ashwint/workspace/github/cudf/ dgx13:workspace/cudf-remote")
+     (firestarter . "rsync -avz -e ssh /Users/ashwint/workspace/github/cudf dgx13:workspace/cudf")
+     (firestarter let*
+                  ((rsync--obey-gitignore t)
+                   (rsync--exclude-git nil)
+                   (args
+                    (\`
+                     ("-aP" "'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'" "--delete"
+                      (\,
+                       (when
+                           (and rsync--obey-gitignore
+                                (file-exists-p ".gitignore"))
+                         "--filter=':- .gitignore'"))
+                      (\,
+                       (when rsync--exclude-git "--exclude='.git/'"))
+                      (\,
+                       (projectile-project-root))
+                      "dgx13:workspace/cudf-remote/"))))
+                  (apply
+                   (quote start-process)
+                   "rsync" "foo" "rsync" args))
+     (firestarter let*
+                  ((rsync--obey-gitignore t)
+                   (rsync--exclude-git nil)
+                   (args
+                    (\`
+                     ("-aP" "'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'" "--delete"
+                      (\,
+                       (when
+                           (and rsync--obey-gitignore
+                                (file-exists-p ".gitignore"))
+                         "--filter=':- .gitignore'"))
+                      (\,
+                       (when rsync--exclude-git "--exclude='.git/'"))
+                      (\,
+                       (projectile-project-root))
+                      "dgx13:workspace/cudf-remote/"))))
+                  (apply
+                   (quote start-process)
+                   "rsync" args))
+     (firestarter let*
+                  ((rsync--obey-gitignore t)
+                   (rsync--exclude-git nil)
+                   (args
+                    (\`
+                     ("-aP" "'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'" "--delete"
+                      (\,
+                       (when
+                           (and rsync--obey-gitignore
+                                (file-exists-p ".gitignore"))
+                         "--filter=':- .gitignore'"))
+                      (\,
+                       (when rsync--exclude-git "--exclude='.git/'"))
+                      (\,
+                       (projectile-project-root))
+                      "dgx13:workspace/cudf-remote/"))))
+                  (apply
+                   (quote start-process)
+                   "rsync" nil "rsync" args))
+     (firestarter let*
+                  ((rsync--obey-gitignore t)
+                   (rsync--exclude-git nil)
+                   (args
+                    (\`
+                     ("-aP" "'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'" "--delete"
+                      (\,
+                       (when
+                           (and rsync--obey-gitignore
+                                (file-exists-p ".gitignore"))
+                         "--filter=':- .gitignore'"))
+                      (\,
+                       (when rsync--exclude-git "--exclude='.git/'"))
+                      (\,
+                       (projectile-project-root))
+                      "dgx13:workspace/cudf-remote"))))
+                  (apply
+                   (quote start-process)
+                   "rsync" nil "rsync" args))))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -382,14 +493,33 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(delete-selection-mode nil)
  '(evil-want-Y-yank-to-eol nil)
+ '(hl-todo-keyword-faces
+   (quote
+    (("TODO" . "#dc752f")
+     ("NEXT" . "#dc752f")
+     ("THEM" . "#2d9574")
+     ("PROG" . "#4f97d7")
+     ("OKAY" . "#4f97d7")
+     ("DONT" . "#f2241f")
+     ("FAIL" . "#f2241f")
+     ("DONE" . "#86dc2f")
+     ("NOTE" . "#b1951d")
+     ("KLUDGE" . "#b1951d")
+     ("HACK" . "#b1951d")
+     ("TEMP" . "#b1951d")
+     ("FIXME" . "#dc752f")
+     ("XXX" . "#dc752f")
+     ("XXXX" . "#dc752f"))))
  '(package-selected-packages
    (quote
-    (cuda-mode pyenv-mode orgit markdown-toc magit-gitflow hy-mode helm-gitignore helm-company helm-c-yasnippet gruvbox-theme git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ flycheck-pos-tip pos-tip evil-magit magit-popup magit transient git-commit darktooth-theme company-statistics company-c-headers company-anaconda auto-yasnippet anaconda-mode ac-ispell zenburn-theme zen-and-art-theme yapfify xterm-color white-sand-theme unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle shell-pop seti-theme reverse-theme rebecca-theme railscasts-theme pyvenv pytest py-isort purple-haze-theme professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-mode majapahit-theme madhat2r-theme lush-theme live-py-mode light-soap-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme dash-functional heroku-theme hemisu-theme helm-pydoc hc-zenburn-theme gruber-darker-theme grandshell-theme gotham-theme gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter with-editor gh-md gandalf-theme fuzzy flycheck flatui-theme flatland-theme farmhouse-theme exotica-theme lv espresso-theme eshell-z eshell-prompt-extras esh-help dracula-theme django-theme disaster diff-hl autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme yasnippet apropospriate-theme anti-zenburn-theme pythonic ample-zen-theme ample-theme alect-themes afternoon-theme auto-complete ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line))))
+    (reveal-in-osx-finder osx-trash osx-dictionary osx-clipboard launchctl powerline spinner org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download hydra htmlize parent-mode projectile gnuplot pkg-info epl flx highlight smartparens iedit anzu evil goto-chg undo-tree cuda-mode bind-map bind-key packed f dash s helm avy helm-core async popup pyenv-mode orgit markdown-toc magit-gitflow hy-mode helm-gitignore helm-company helm-c-yasnippet gruvbox-theme git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ flycheck-pos-tip pos-tip evil-magit magit-popup magit transient git-commit darktooth-theme company-statistics company-c-headers company-anaconda auto-yasnippet anaconda-mode ac-ispell zenburn-theme zen-and-art-theme yapfify xterm-color white-sand-theme unfill underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stickyfunc-enhance srefactor spacegray-theme soothe-theme solarized-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme smeargle shell-pop seti-theme reverse-theme rebecca-theme railscasts-theme pyvenv pytest py-isort purple-haze-theme professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme organic-green-theme omtose-phellack-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme naquadah-theme mwim mustang-theme multi-term monokai-theme monochrome-theme molokai-theme moe-theme mmm-mode minimal-theme material-theme markdown-mode majapahit-theme madhat2r-theme lush-theme live-py-mode light-soap-theme jbeans-theme jazz-theme ir-black-theme inkpot-theme dash-functional heroku-theme hemisu-theme helm-pydoc hc-zenburn-theme gruber-darker-theme grandshell-theme gotham-theme gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link git-gutter with-editor gh-md gandalf-theme fuzzy flycheck flatui-theme flatland-theme farmhouse-theme exotica-theme lv espresso-theme eshell-z eshell-prompt-extras esh-help dracula-theme django-theme disaster diff-hl autothemer darkokai-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized cmake-mode clues-theme clang-format cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme badwolf-theme yasnippet apropospriate-theme anti-zenburn-theme pythonic ample-zen-theme ample-theme alect-themes afternoon-theme auto-complete ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox org-plus-contrib org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line)))
+ '(tramp-use-ssh-controlmaster-options nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:background nil)))))
+ )
 )
